@@ -1,9 +1,10 @@
 
 import React, {Component} from 'react';
-import {ListView, AppRegistry, Platform, StyleSheet, Text, View, Image,TouchableHighlight} from 'react-native';
+import {Alert,ListView, AppRegistry, Platform, StyleSheet, Text, View, Image,TouchableHighlight} from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import { Card, ListItem, Button,ButtonGroup } from 'react-native-elements';
 import * as firebase from 'firebase';
+import HideableView from './app/components/HideableView/HideableView';
 
 const firebaseConfig = {
     apiKey: "AIzaSyDbvELOADSFoylTLlzR5iV8zLDGRF1suls",
@@ -12,6 +13,7 @@ const firebaseConfig = {
     projectId: "shirlypilates-cfced",
     storageBucket: "shirlypilates-cfced.appspot.com"
 }
+
 const firebaseApp = firebase.initializeApp(firebaseConfig);
 const instructions = Platform.select({
   ios: 'Press Cmd+R to reload,\n' + 'Cmd+D or shake for dev menu',
@@ -22,25 +24,51 @@ const instructions = Platform.select({
 const styles = require('./app/style');
 
 type Props = {};
+
 export default class App extends Component<Props> {
 
   state = {
-    index: 0
+    index: 0,
+    hideClassList: true,
+    hideStudioInfo: true,
+    hideMyInfo: true,
+    hideMessages: true,
   }
 
   updateIndex = (index) => {
-    this.setState({index})
+    this.setState({index});
+    if(index == 0)
+    {
+      this.setState({hideClassList: true,hideStudioInfo: false,hideMyInfo: true,hideMessages: true});
+    }
+    else if(index == 1){
+      this.setState({hideClassList: true,hideStudioInfo: true,hideMyInfo: false,hideMessages: true});
+    }
+    else if(index == 2){
+      this.setState({hideClassList: false,hideStudioInfo: true,hideMyInfo: true,hideMessages: true});
+    }
+    else if(index == 3){
+      this.setState({hideClassList: true,hideStudioInfo: true,hideMyInfo: true,hideMessages: false});
+    }
+    else {
+      this.setState({hideClassList: true,hideStudioInfo: true,hideMyInfo: true,hideMessages: true});
+    }
   }
+
   constructor()
   {
     super();
     let ds = new ListView.DataSource({rowHasChanged:(r1,r2)=>r1 !== r2});
     this.state = {
-      itemDataSource: ds
+      itemDataSource: ds,
+      hideClassList: true,
+      hideStudioInfo: true,
+      hideMyInfo: true,
+      hideMessages: true
     }
 
     this.itemsRef = this.getRef().child('ClassList');
-
+    
     this.renderRow = this.renderRow.bind(this);
     this.pressRow = this.pressRow.bind(this);
   }
@@ -77,8 +105,19 @@ export default class App extends Component<Props> {
 
   pressRow(item)
   {
+    Alert.alert(
+    'Signup ' + item,
+    'Do you want to sign up for this class?',
+    [
+      {text: 'Always', onPress: () => console.log('Always sign for this lesson')},
+      {text: 'No', onPress: () => console.log('No Pressed'), style: 'cancel'},
+      {text: 'Yes', onPress: () => console.log('Yes Pressed')},
+    ],
+    { cancelable: false }
+    );
     console.log(item);
   }
+
   renderRow(item)
   {
     return(
@@ -95,9 +134,10 @@ export default class App extends Component<Props> {
     let pic = {
       uri: 'https://en.wikipedia.org/wiki/Main_Page#/media/File:TSM350_2015_-_Joey_Logano_1_-_Stierch.jpg'
     };
+
     return (
       <View>
-      <Icon.Button name="facebook" backgroundColor="#3b5998">
+      <Icon.Button name="facebook" backgroundColor="#3b5998" onPress={this.updateIndex}>
         <Text style={{fontFamily: 'Arial', fontSize: 18, backgroundColor:"#3b5998"}}>Login with Facebook</Text>
       </Icon.Button>
       <Icon.Button name="google" backgroundColor="#f18973">
@@ -113,10 +153,22 @@ export default class App extends Component<Props> {
         textStyle = {styles2.welcome}
 
          />
-         <ListView
-          dataSource = {this.state.itemDataSource}
-          renderRow = {this.renderRow}
-         />
+         <HideableView hide = {this.state.hideClassList}>
+           <ListView
+            dataSource = {this.state.itemDataSource}
+            renderRow = {this.renderRow}
+           />
+         </HideableView>
+         <HideableView hide = {this.state.hideMyInfo}>
+            <Text style={{fontFamily: 'Arial', fontSize: 18, backgroundColor:"#f18973"}}>My information</Text>
+         </HideableView>
+         <HideableView hide = {this.state.hideMessages}>
+            <Text style={{fontFamily: 'Arial', fontSize: 18, backgroundColor:"#f18973"}}>Messages</Text>
+         </HideableView>
+         <HideableView hide = {this.state.hideStudioInfo}>
+            <Text style={{fontFamily: 'Arial', fontSize: 18, backgroundColor:"#f18973"}}>Studio info</Text>
+         </HideableView>
+
 
       </View>
     );
