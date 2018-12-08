@@ -1,6 +1,6 @@
 
 import React, {Component} from 'react';
-import {Alert,ListView, AppRegistry, Platform, StyleSheet, Text, View, Image,TouchableHighlight} from 'react-native';
+import {KeyboardAvoidingView ,Alert,ListView, AppRegistry, Platform, StyleSheet, Text, View, Image,TouchableHighlight,TextInput, TouchableOpacity} from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import { Card, ListItem, Button,ButtonGroup } from 'react-native-elements';
 import * as firebase from 'firebase';
@@ -15,12 +15,6 @@ const firebaseConfig = {
 }
 
 const firebaseApp = firebase.initializeApp(firebaseConfig);
-const instructions = Platform.select({
-  ios: 'Press Cmd+R to reload,\n' + 'Cmd+D or shake for dev menu',
-  android:
-    'Double tap R on your keyboard to reload,\n' +
-    'Shake or press menu button for dev menu',
-});
 const styles = require('./app/style');
 
 type Props = {};
@@ -34,7 +28,7 @@ export default class App extends Component<Props> {
     hideMyInfo: true,
     hideMessages: true,
   }
-
+  //Method invoked when clicking one of the buttons for selecting the part of the app to see
   updateIndex = (index) => {
     this.setState({index});
     if(index == 0)
@@ -59,16 +53,20 @@ export default class App extends Component<Props> {
   {
     super();
     let ds = new ListView.DataSource({rowHasChanged:(r1,r2)=>r1 !== r2});
+    let ds2 = new ListView.DataSource({rowHasChanged:(r1,r2)=>r1 !== r2});
     this.state = {
       itemDataSource: ds,
+      itemDataSource2: ds2,
       hideClassList: true,
       hideStudioInfo: true,
       hideMyInfo: true,
-      hideMessages: true
+      hideMessages: true,
+      loading: true,
+      loggedIn: false,
     }
 
     this.itemsRef = this.getRef().child('ClassList');
-    
+    this.itemsRef2 = this.getRef().child('Messages');
     this.renderRow = this.renderRow.bind(this);
     this.pressRow = this.pressRow.bind(this);
   }
@@ -79,12 +77,27 @@ export default class App extends Component<Props> {
   }
 
   componentWillMount(){
-    this.getItems(this.itemsRef);
+    this.getItems(this.itemsRef,this.itemsRef2);
   }
   componentDidMount(){
-    this.getItems(this.itemsRef);
+    this.getItems(this.itemsRef,this.itemsRef2);
+    this.authSubscription = firebase.auth().onAuthStateChanged((user) => {
+      this.setState({
+        loading: false,
+        user,
+      });
+    });
+
   }
-  getItems(itemsRef)
+  /**
+   * Don't forget to stop listening for authentication state changes
+   * when the component unmounts.
+   */
+  componentWillUnmount() {
+    this.authSubscription();
+  }
+
+  getItems(itemsRef,itemsRef2)
   {
     //let classes = [{title:'Class 1'},{title:'Class 2'}];
     itemsRef.on('value',(snap)=>
@@ -100,6 +113,19 @@ export default class App extends Component<Props> {
             itemDataSource: this.state.itemDataSource.cloneWithRows(items)
           });
       });
+      itemsRef2.on('value',(snap)=>
+      {
+        let items2 = [];
+        snap.forEach((child) => {
+          items2.push({
+              title: child.val().title,
+              _key: child.key
+            });
+          });
+          this.setState({
+              itemDataSource2: this.state.itemDataSource2.cloneWithRows(items2)
+            });
+        });
 
   }
 
@@ -131,18 +157,15 @@ export default class App extends Component<Props> {
       );
   }
   render() {
-    let pic = {
-      uri: 'https://en.wikipedia.org/wiki/Main_Page#/media/File:TSM350_2015_-_Joey_Logano_1_-_Stierch.jpg'
-    };
-
+    // The application is initialising
+    if (this.state.loading) return null;
+    // The user is an Object, so they're logged in
+    //if (this.state.user)
+    else
     return (
       <View>
-      <Icon.Button name="facebook" backgroundColor="#3b5998" onPress={this.updateIndex}>
-        <Text style={{fontFamily: 'Arial', fontSize: 18, backgroundColor:"#3b5998"}}>Login with Facebook</Text>
-      </Icon.Button>
-      <Icon.Button name="google" backgroundColor="#f18973">
-        <Text style={{fontFamily: 'Arial', fontSize: 18, backgroundColor:"#f18973"}}>Login with Google</Text>
-      </Icon.Button>
+
+
       <ButtonGroup
         selectedBackgroundColor="blue"
         underlayColor = "blue"
@@ -150,7 +173,7 @@ export default class App extends Component<Props> {
         selectedIndex={this.state.index}
         buttons={['על הסטודיו','העמוד שלי','הרשמה לשיעורים','הודעות']}
         containerStyle={{height: 50}}
-        textStyle = {styles2.welcome}
+        textStyle = {styles.liText}
 
          />
          <HideableView hide = {this.state.hideClassList}>
@@ -163,6 +186,10 @@ export default class App extends Component<Props> {
             <Text style={{fontFamily: 'Arial', fontSize: 18, backgroundColor:"#f18973"}}>My information</Text>
          </HideableView>
          <HideableView hide = {this.state.hideMessages}>
+           <ListView
+            dataSource = {this.state.itemDataSource2}
+            renderRow = {this.renderRow}
+           />
             <Text style={{fontFamily: 'Arial', fontSize: 18, backgroundColor:"#f18973"}}>Messages</Text>
          </HideableView>
          <HideableView hide = {this.state.hideStudioInfo}>
@@ -173,25 +200,98 @@ export default class App extends Component<Props> {
       </View>
     );
 
+    // The user is null, so they're logged out - show login screen
+    return(
+      <KeyboardAvoidingView behavior="padding" style={styles.container}>
 
+                <View style={styles.loginContainer}>
+                   <Image resizeMode="contain" style={styles.logo} source={require('./app/Images/shirly.jpg')} />
+
+                   </View>
+               <View style={styles.formContainer}>
+                 <TextInput style = {styles.input}
+                        autoCapitalize="none"
+                        onSubmitEditing={() => this.passwordInput.focus()}
+                        autoCorrect={false}
+                        keyboardType='email-address'
+                        returnKeyType="next"
+                        placeholder='Email or Mobile Num'
+                        placeholderTextColor='rgba(105,105,105,0.7)'
+                        ref = "username"
+                        onChangeText={(username) => this.setState({username})}/>
+
+                 <TextInput style = {styles.input}
+                       returnKeyType="go"
+                       ref={(input)=> this.passwordInput = input}
+                       placeholder='Password'
+                       placeholderTextColor='rgba(105,105,105,0.7)'
+                       secureTextEntry
+                       ref = "password"
+                       onChangeText={(password) => this.setState({password})}/>
+                       <Icon.Button name="facebook" backgroundColor="#3b5998" onPress={this.updateIndex}>
+                         <Text style={{fontFamily: 'Arial', fontSize: 18, backgroundColor:"#3b5998"}}>Login with Facebook</Text>
+                       </Icon.Button>
+                 <TouchableOpacity style={styles.buttonContainer}
+                              onPress={() => {
+                              //const { this.state.username, this.state.password } = this.state;
+                              firebase.auth().signInWithEmailAndPassword(this.state.username, this.state.password)
+                                .then((user) => {
+                                  // If you need to do anything with the user, do it here
+                                  // The user will be logged in automatically by the
+                                  // `onAuthStateChanged` listener we set up in App.js earlier
+                                })
+                                .catch((error) => {
+                                  const { code, message } = error;
+                                  // For details of error codes, see the docs
+                                  // The message contains the default Firebase string
+                                  // representation of the error
+                                });
+                            }}>
+                      <Text  style={styles.buttonText}>Login</Text>
+                 </TouchableOpacity>
+                 <TouchableOpacity style={styles.buttonContainer}
+                              onPress = {() => {
+                                      //const { email, password } = this.state;
+                                      firebase.auth().createUserWithEmailAndPassword(this.state.username, this.state.password)
+                                        .then((user) => {
+                                          // If you need to do anything with the user, do it here
+                                          // The user will be logged in automatically by the
+                                          // `onAuthStateChanged` listener we set up in App.js earlier
+                                        })
+                                        .catch((error) => {
+                                          const { code, message } = error;
+                                          // For details of error codes, see the docs
+                                          // The message contains the default Firebase string
+                                          // representation of the error
+                                        });
+                                    }}>
+                      <Text  style={styles.buttonText}>Register</Text>
+                 </TouchableOpacity>
+               </View>
+           </KeyboardAvoidingView>
+    /*  <View>
+        <Image style={{width: 40, height: 40}} source={require('./app/Images/shirly.jpg')}  />
+        <TextInput style = {styles.input}
+               autoCapitalize="none"
+               onSubmitEditing={() => this.passwordInput.focus()}
+               autoCorrect={false}
+               keyboardType='email-address'
+               returnKeyType="next"
+               placeholder='Email or Mobile Num'
+               placeholderTextColor='rgba(105,105,105,0.7)'/>
+
+        <TextInput style = {styles.input}
+              returnKeyType="go"
+              ref={(input)=> this.passwordInput = input}
+              placeholder='Password'
+              placeholderTextColor='rgba(105,105,105,0.7)'
+              secureTextEntry/>
+
+        <TouchableOpacity style={styles.buttonContainer}
+                     onPress={() => Alert.alert()}>
+             <Text  style={styles.buttonText}>LOGIN</Text>
+        </TouchableOpacity>
+      </View>*/
+    )
   }
 }
-
-const styles2 = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#F5FCFF',
-  },
-  welcome: {
-    fontSize: 18,
-    textAlign: 'center',
-    margin: 10,
-  },
-  instructions: {
-    textAlign: 'center',
-    color: '#333333',
-    marginBottom: 5,
-  },
-});

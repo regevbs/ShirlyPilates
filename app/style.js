@@ -63,5 +63,32 @@ module.exports = StyleSheet.create({
     paddingLeft: 16,
     paddingTop: 14,
     paddingBottom: 16,
-  }
+  },
+  input:{
+      height: 40,
+      backgroundColor: 'rgba(225,225,225,0.2)',
+      marginBottom: 10,
+      padding: 10,
+      color: '#000'
+  },
+  buttonContainer:{
+      backgroundColor: '#2980b6',
+      paddingVertical: 15
+  },
+  buttonText:{
+      color: '#000',
+      textAlign: 'center',
+      fontWeight: '700'
+  },
+  loginContainer:{
+        alignItems: 'center',
+        flexGrow: 1,
+        justifyContent: 'center'
+    },
+    logo: {
+        position: 'absolute',
+        width: 300,
+        height: 100
+    },
+
 });
