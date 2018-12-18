@@ -75,6 +75,10 @@ module.exports = StyleSheet.create({
       backgroundColor: '#2980b6',
       paddingVertical: 15
   },
+  buttonContainer2:{
+      backgroundColor: 'red',
+      paddingVertical: 15
+  },
   buttonText:{
       color: '#000',
       textAlign: 'center',

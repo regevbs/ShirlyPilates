@@ -52,6 +52,7 @@ export default class App extends Component<Props> {
   constructor()
   {
     super();
+    //console.ignoredYellowBox = ['Setting a timer'];
     let ds = new ListView.DataSource({rowHasChanged:(r1,r2)=>r1 !== r2});
     let ds2 = new ListView.DataSource({rowHasChanged:(r1,r2)=>r1 !== r2});
     this.state = {
@@ -135,7 +136,7 @@ export default class App extends Component<Props> {
     'Signup ' + item,
     'Do you want to sign up for this class?',
     [
-      {text: 'Always', onPress: () => console.log('Always sign for this lesson')},
+      //{text: 'Always', onPress: () => console.log('Always sign for this lesson')},
       {text: 'No', onPress: () => console.log('No Pressed'), style: 'cancel'},
       {text: 'Yes', onPress: () => console.log('Yes Pressed')},
     ],
@@ -152,16 +153,21 @@ export default class App extends Component<Props> {
         }}>
         <View style = {styles.li}>
           <Text style={styles.liText}>{item.title}</Text>
+
+          <View style={styles.buttonContainer}>
+            <Text style={styles.buttonText}>Sign up</Text>
+          </View>
         </View>
       </TouchableHighlight>
       );
   }
+
   render() {
     // The application is initialising
     if (this.state.loading) return null;
     // The user is an Object, so they're logged in
-    //if (this.state.user)
-    else
+    if (this.state.user)
+    //else
     return (
       <View>
 
@@ -184,11 +190,21 @@ export default class App extends Component<Props> {
          </HideableView>
          <HideableView hide = {this.state.hideMyInfo}>
             <Text style={{fontFamily: 'Arial', fontSize: 18, backgroundColor:"#f18973"}}>My information</Text>
+            <TouchableOpacity style={styles.buttonContainer}
+                         onPress={() => {
+                         Alert.alert("logging out.");
+                         firebase.auth().signOut();
+
+
+                       }}>
+                 <Text  style={styles.buttonText}>Logout</Text>
+            </TouchableOpacity>
          </HideableView>
          <HideableView hide = {this.state.hideMessages}>
            <ListView
             dataSource = {this.state.itemDataSource2}
             renderRow = {this.renderRow}
+
            />
             <Text style={{fontFamily: 'Arial', fontSize: 18, backgroundColor:"#f18973"}}>Messages</Text>
          </HideableView>
@@ -215,33 +231,36 @@ export default class App extends Component<Props> {
                         autoCorrect={false}
                         keyboardType='email-address'
                         returnKeyType="next"
-                        placeholder='Email or Mobile Num'
+                        placeholder='Email'
                         placeholderTextColor='rgba(105,105,105,0.7)'
                         ref = "username"
                         onChangeText={(username) => this.setState({username})}/>
 
                  <TextInput style = {styles.input}
                        returnKeyType="go"
-                       ref={(input)=> this.passwordInput = input}
+                       //ref={(input)=> this.passwordInput = input}
                        placeholder='Password'
                        placeholderTextColor='rgba(105,105,105,0.7)'
                        secureTextEntry
-                       ref = "password"
+                       ref = {(input)=> this.passwordInput = input} //"password"
                        onChangeText={(password) => this.setState({password})}/>
-                       <Icon.Button name="facebook" backgroundColor="#3b5998" onPress={this.updateIndex}>
-                         <Text style={{fontFamily: 'Arial', fontSize: 18, backgroundColor:"#3b5998"}}>Login with Facebook</Text>
-                       </Icon.Button>
                  <TouchableOpacity style={styles.buttonContainer}
                               onPress={() => {
-                              //const { this.state.username, this.state.password } = this.state;
+                              if(this.state.username == null|| this.state.password == null || this.state.username.trim() == "" || this.state.password.trim() == "")
+                              {
+                                Alert.alert("Error - empty fields");
+                                return;
+                              }
                               firebase.auth().signInWithEmailAndPassword(this.state.username, this.state.password)
                                 .then((user) => {
+                                  Alert.alert("Login successful");
                                   // If you need to do anything with the user, do it here
                                   // The user will be logged in automatically by the
                                   // `onAuthStateChanged` listener we set up in App.js earlier
                                 })
                                 .catch((error) => {
                                   const { code, message } = error;
+                                  Alert.alert(message);
                                   // For details of error codes, see the docs
                                   // The message contains the default Firebase string
                                   // representation of the error
@@ -249,17 +268,24 @@ export default class App extends Component<Props> {
                             }}>
                       <Text  style={styles.buttonText}>Login</Text>
                  </TouchableOpacity>
-                 <TouchableOpacity style={styles.buttonContainer}
+                 <TouchableOpacity style={styles.buttonContainer2}
                               onPress = {() => {
                                       //const { email, password } = this.state;
+                                      if(this.state.username == null|| this.state.password == null || this.state.username.trim() == "" || this.state.password.trim() == "")
+                                      {
+                                        Alert.alert("Error - empty fields");
+                                        return;
+                                      }
                                       firebase.auth().createUserWithEmailAndPassword(this.state.username, this.state.password)
                                         .then((user) => {
+                                          Alert.alert("User " + this.state.username + " created.\npassword: " + this.state.password);
                                           // If you need to do anything with the user, do it here
                                           // The user will be logged in automatically by the
                                           // `onAuthStateChanged` listener we set up in App.js earlier
                                         })
                                         .catch((error) => {
                                           const { code, message } = error;
+                                          Alert.alert(message);
                                           // For details of error codes, see the docs
                                           // The message contains the default Firebase string
                                           // representation of the error
@@ -269,29 +295,6 @@ export default class App extends Component<Props> {
                  </TouchableOpacity>
                </View>
            </KeyboardAvoidingView>
-    /*  <View>
-        <Image style={{width: 40, height: 40}} source={require('./app/Images/shirly.jpg')}  />
-        <TextInput style = {styles.input}
-               autoCapitalize="none"
-               onSubmitEditing={() => this.passwordInput.focus()}
-               autoCorrect={false}
-               keyboardType='email-address'
-               returnKeyType="next"
-               placeholder='Email or Mobile Num'
-               placeholderTextColor='rgba(105,105,105,0.7)'/>
-
-        <TextInput style = {styles.input}
-              returnKeyType="go"
-              ref={(input)=> this.passwordInput = input}
-              placeholder='Password'
-              placeholderTextColor='rgba(105,105,105,0.7)'
-              secureTextEntry/>
-
-        <TouchableOpacity style={styles.buttonContainer}
-                     onPress={() => Alert.alert()}>
-             <Text  style={styles.buttonText}>LOGIN</Text>
-        </TouchableOpacity>
-      </View>*/
     )
   }
 }
