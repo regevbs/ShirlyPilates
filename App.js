@@ -1,6 +1,6 @@
 
 import React, {Component} from 'react';
-import {KeyboardAvoidingView ,Alert,ListView, AppRegistry, Platform, StyleSheet, Text, View, Image,TouchableHighlight,TextInput, TouchableOpacity} from 'react-native';
+import {KeyboardAvoidingView ,Alert,ListView, AppRegistry, Platform, StyleSheet,FlatList, Text, View, Image,TouchableHighlight,TextInput, TouchableOpacity} from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import { Card, ListItem, Button,ButtonGroup } from 'react-native-elements';
 import * as firebase from 'firebase';
@@ -55,6 +55,7 @@ export default class App extends Component<Props> {
     //console.ignoredYellowBox = ['Setting a timer'];
     let ds = new ListView.DataSource({rowHasChanged:(r1,r2)=>r1 !== r2});
     let ds2 = new ListView.DataSource({rowHasChanged:(r1,r2)=>r1 !== r2});
+
     this.state = {
       itemDataSource: ds,
       itemDataSource2: ds2,
@@ -132,13 +133,15 @@ export default class App extends Component<Props> {
 
   pressRow(item)
   {
+    let title = "hi";
+    //let title2 = "bye";
     Alert.alert(
-    'Signup ' + item,
+    'Signup ' + item.title,
     'Do you want to sign up for this class?',
     [
       //{text: 'Always', onPress: () => console.log('Always sign for this lesson')},
-      {text: 'No', onPress: () => console.log('No Pressed'), style: 'cancel'},
-      {text: 'Yes', onPress: () => console.log('Yes Pressed')},
+      {text: 'No', onPress: () => this.itemsRef.child(item._key).update({title,}), style: 'cancel'},
+      {text: 'Yes', onPress: () => {title = "bye"; this.itemsRef.child(item._key).update({title,});}},
     ],
     { cancelable: false }
     );
@@ -161,6 +164,8 @@ export default class App extends Component<Props> {
       </TouchableHighlight>
       );
   }
+
+
 
   render() {
     // The application is initialising
@@ -187,6 +192,8 @@ export default class App extends Component<Props> {
             dataSource = {this.state.itemDataSource}
             renderRow = {this.renderRow}
            />
+
+
          </HideableView>
          <HideableView hide = {this.state.hideMyInfo}>
             <Text style={{fontFamily: 'Arial', fontSize: 18, backgroundColor:"#f18973"}}>My information</Text>
